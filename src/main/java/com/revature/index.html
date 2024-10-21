@@ -7,7 +7,43 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    
+    <header>
+        <h1>Book Finder</h1>
+    </header>
+
+    <main>
+        <form id="search-form" align="center">
+            <input type="text" id="search-input" placeholder="Search for a book..." required>
+            <select id="search-type">
+                <option value="title">Title</option>
+                <option value="isbn">ISBN</option>
+                <option value="author">Author</option>
+            </select><br><br>
+            <button type="submit" id="search-button">Search</button>
+        </form><br>
+        <div id="filter-sort"  style="display: none; flex-direction: column; align-items: center;">
+            <button id="sort-rating">Sort by Rating</button>
+            <label>
+                <input type="checkbox" id="ebook-filter"> Show eBooks only
+            </label>
+        </div>
+        <ul id="book-list">
+            
+        </ul>
+        <div id="selected-book" style="display: none;">
+            <h2 class="title-element"></h2>
+            <p><strong>Author:</strong> <span class="author-element"></span></p>
+            <p><strong>First Publish Year:</strong> <span class="published-element"></span></p>
+            <img class="cover-element" alt="">
+            <p><strong>ISBN:</strong> <span class="isbn-element"></span></p>
+            <p class="ebook-element"></p>
+            <p><strong>Rating:</strong> <span class="rating-element"></span></p>
+            <button onclick="goBack()">Back to Results</button>
+        </div>
+    </main><br><br><br><br><br><br><br><br><br><br>
+    <footer>
+        <p> - By Arun Kumar Reddy</p>
+    </footer>
     
     <script src="script.js"></script>
 </body>

@@ -1,5 +1,18 @@
 // add variable references and event listeners here!
 
+const searchForm = document.getElementById('search-form');
+const bookList = document.getElementById('book-list');
+const selectedBookDiv = document.getElementById('selected-book');
+const ebookFilterCheckbox = document.getElementById('ebook-filter');
+const sortButton = document.getElementById('sort-rating');
+const searchButton = document.getElementById('search-button');
+let books = [];
+
+// Event listeners
+searchForm.addEventListener('submit', handleSearch);
+ebookFilterCheckbox.addEventListener('change', handleFilter);
+sortButton.addEventListener('click', handleSort);
+
 /**
  * Searches for books using the Google Books API based on the given query and type.
  *
@@ -27,6 +40,20 @@
  * 
  */
 async function searchBooks(query, type) {
+
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${type}:${encodeURIComponent(query)}&maxResults=10`);
+    const data = await response.json();
+    
+    return data.items.map(item => ({
+        title: item.volumeInfo.title,
+        author_name: item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Unknown',
+        isbn: item.volumeInfo.industryIdentifiers ? item.volumeInfo.industryIdentifiers.find(id => id.type === 'ISBN_13')?.identifier : 'N/A',
+        cover_i: item.volumeInfo.imageLinks?.thumbnail || '',
+        ebook_access: item.accessInfo.epub?.isAvailable ? 'borrowable' : 'Not available',
+        first_publish_year: item.volumeInfo.publishedDate ? item.volumeInfo.publishedDate.split('-')[0] : 'N/A',
+        ratings_sortable: item.volumeInfo.averageRating || 0
+    }));
+
 }
 
 /**
@@ -53,8 +80,28 @@ async function searchBooks(query, type) {
 * 5. Ensures that the 'selected-book' element is not visible.
 */
 function displayBookList(books) {
-  
+    bookList.innerHTML = ''; // Clear the existing list
+    if (books.length === 0) {
+        bookList.innerHTML = '<li>No books found.</li>'; // Display a message if no books are found
+        return;
+    }
+    
+    books.forEach(book => {
+        const li = document.createElement('li');
+        li.classList.add('book-item');
+        li.innerHTML = `
+            <div class="title-element">${book.title}</div>
+            <div class="author-element">${book.author_name}</div>
+            <img class="cover-element" src="${book.cover_i}" alt="${book.title}">
+            <div class="rating-element">Rating: ${book.ratings_sortable}</div>
+            <div class="ebook-element">${book.ebook_access}</div>
+        `;
+        li.addEventListener('click', () => displaySingleBook(book));
+        bookList.appendChild(li);
+    });
+    selectedBookDiv.style.display = 'none'; // Ensure single book view is hidden
 }
+
 
 /**
  * Handles the search form submission and updates the UI with search results.
@@ -76,6 +123,18 @@ function displayBookList(books) {
  */
 async function handleSearch(event) {
 
+    event.preventDefault();
+    const query = document.getElementById('search-input').value;
+    const type = document.getElementById('search-type').value;
+
+    try {
+        books = await searchBooks(query, type);
+        displayBookList(books);
+        document.getElementById('filter-sort').style.display = 'flex'; // flexing filter and sort options
+    } catch (error) {
+        console.error('Error fetching books:', error);
+        alert('Failed to fetch books. Please try again later.');
+    }
 }
 
 
@@ -105,8 +164,27 @@ async function handleSearch(event) {
  * 
  */
 function displaySingleBook(book) {
+    bookList.style.display = 'none';
+    selectedBookDiv.style.display = 'block';
+    document.getElementById('filter-sort').style.display = 'none'; // Hide filter and sort options
 
+    selectedBookDiv.innerHTML = `
+        <h2 class="title-element">${book.title}</h2>
+        <p><strong>Author:</strong> <span class="author-element">${book.author_name}</span></p>
+        <p><strong>First Publish Year:</strong> <span class="published-element">${book.first_publish_year}</span></p>
+        <img class="cover-element" src="${book.cover_i}" alt="${book.title}">
+        <p><strong>ISBN:</strong> <span class="isbn-element">${book.isbn}</span></p>
+        <p class="ebook-element">${book.ebook_access}</p>
+        <p><strong>Rating:</strong> <span class="rating-element">${book.ratings_sortable}</span></p>
+        <button onclick="goBack()">Back to Results</button>
+    `;
 }
+
+function goBack() {
+    selectedBookDiv.style.display = 'none';
+    bookList.style.display = 'block';
+}
+
 
 /**
  * Filters the displayed book list to show only e-books when the checkbox is checked.
@@ -124,8 +202,12 @@ function displaySingleBook(book) {
  * 
  */
 function handleFilter() {
-
+    const filteredBooks = ebookFilterCheckbox.checked 
+        ? books.filter(book => book.ebook_access === 'Available as eBook')
+        : books;
+    displayBookList(filteredBooks);
 }
+
 
 /**
  * Sorts the displayed book list by rating in descending order when the button is clicked.
@@ -143,4 +225,8 @@ function handleFilter() {
  */
 function handleSort() {
 
+    const sortedBooks = [...books].sort((a, b) => (b.ratings_sortable || 0) - (a.ratings_sortable || 0));
+    displayBookList(sortedBooks);
+
 }
+
